@@ -35,7 +35,7 @@ with NativeClient(name="client1>") as client1:
         "SELECT mysql_connection_id FROM system.processes WHERE extra_info LIKE '%SELECT max(number)%' AND extra_info NOT LIKE '%system.processes%';"
     )
     res = mycursor.fetchone()
-    kill_query = "kill query " + str(res[0]) + ";"
+    kill_query = f"kill query {str(res[0])};"
     mycursor.execute(kill_query)
     time.sleep(0.1)
     mycursor.execute(

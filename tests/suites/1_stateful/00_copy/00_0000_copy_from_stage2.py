@@ -23,10 +23,8 @@ with NativeClient(name="client1>") as client1:
     client1.expect(prompt)
 
     create_sql_f = os.path.join(CURDIR, "../ddl/ontime.sql")
-    read = open(create_sql_f, "r")
-    create_sql = read.read().replace("ontime", "ontime200")
-    read.close()
-
+    with open(create_sql_f, "r") as read:
+        create_sql = read.read().replace("ontime", "ontime200")
     client1.send(create_sql)
     client1.expect(prompt)
 

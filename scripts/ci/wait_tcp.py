@@ -15,15 +15,15 @@ def tcp_ping(port, timeout):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect(("0.0.0.0", port))
-                print("OK :{} is listening".format(port))
+                print(f"OK :{port} is listening")
                 sys.stdout.flush()
                 return
         except Exception:
-            print("... connecting to :{}".format(port))
+            print(f"... connecting to :{port}")
             sys.stdout.flush()
             time.sleep(1)
 
-    raise Exception("fail to connect to :{}".format(port))
+    raise Exception(f"fail to connect to :{port}")
 
 
 if __name__ == "__main__":

@@ -17,18 +17,15 @@ class client(object):
     def __init__(self, name="", log=None):
         self.name = name
         self.log = log
-        self.client = f"mysql --user default -s"
+        self.client = "mysql --user default -s"
         tcp_host = os.getenv("QUERY_MYSQL_HANDLER_HOST")
         if tcp_host is not None:
             self.client += f" --host={tcp_host}"
         else:
-            self.client += f" --host=127.0.0.1"
+            self.client += " --host=127.0.0.1"
 
         tcp_port = os.getenv("QUERY_MYSQL_HANDLER_PORT")
-        if tcp_port is not None:
-            self.client += f" --port={tcp_port}"
-        else:
-            self.client += f" --port=3307"
+        self.client += " --port=3307" if tcp_port is None else f" --port={tcp_port}"
 
     def __enter__(self):
         pass

@@ -34,9 +34,7 @@ def remove_control_characters(s):
     """
 
     def str_to_int(s, default, base=10):
-        if int(s, base) < 0x10000:
-            return chr(int(s, base))
-        return default
+        return chr(int(s, base)) if int(s, base) < 0x10000 else default
 
     s = re.sub(r"&#(\d+);?", lambda c: str_to_int(c.group(1), c.group(0)), s)
     s = re.sub(r"&#[xX]([0-9a-fA-F]+);?",
@@ -121,26 +119,26 @@ def need_retry(stderr):
 def get_processlist(client_cmd):
     try:
         return subprocess.check_output(
-            "{} --query 'SHOW PROCESSLIST FORMAT Vertical'".format(client_cmd),
-            shell=True)
+            f"{client_cmd} --query 'SHOW PROCESSLIST FORMAT Vertical'",
+            shell=True,
+        )
     except Exception:
         return ""  # server seems dead
 
 
 def get_stacktraces(server_pid):
-    cmd = "gdb -batch -ex 'thread apply all backtrace' -p {}".format(server_pid)
+    cmd = f"gdb -batch -ex 'thread apply all backtrace' -p {server_pid}"
     try:
         return subprocess.check_output(cmd, shell=True)
     except Exception as ex:
-        return "Error occured while receiving stack traces {}".format(str(ex))
+        return f"Error occured while receiving stack traces {str(ex)}"
 
 
 def get_server_pid(server_tcp_port):
     cmd = "lsof - i tcp: {port} - s tcp: LISTEN - Fp | \
     awk '/^p[0-9]+$/{{print substr($0, 2)}}'".format(port=server_tcp_port)
     try:
-        output = subprocess.check_output(cmd, shell=True)
-        if output:
+        if output := subprocess.check_output(cmd, shell=True):
             return int(output[1:])
         else:
             return None  # server dead
@@ -206,10 +204,7 @@ def run_tests_array(all_tests_with_params):
         print("\nRunning {} {} tests.".format(len(all_test_list), suite) + "\n")
 
     def print_test_time(test_time):
-        if args.print_time:
-            return " {0:.2f} sec.".format(test_time)
-        else:
-            return ''
+        return " {0:.2f} sec.".format(test_time) if args.print_time else ''
 
     for test_list in all_test_list:
         failures = 0
@@ -228,31 +223,29 @@ def run_tests_array(all_tests_with_params):
             ).name != "MainProcess"
             if not is_concurrent:
                 sys.stdout.flush()
-                sys.stdout.write("{0:72}".format(name + ": "))
+                sys.stdout.write("{0:72}".format(f"{name}: "))
                 # This flush is needed so you can see the test name of the long
                 # running test before it will finish. But don't do it in
                 # parallel mode, so that the lines don't mix.
                 sys.stdout.flush()
             else:
-                status = "{0:72}".format(name + ": ")
+                status = "{0:72}".format(f"{name}: ")
 
-            if args.skip and any([re.search(r, case) for r in args.skip]):
+            if args.skip and any(re.search(r, case) for r in args.skip):
                 status += MSG_SKIPPED + " - skip\n"
                 skipped_total += 1
             else:
                 case_file_full_path = test_list[0]
                 suite_dir = test_list[1]
                 suite_tmp_dir = test_list[2]
-                disabled_file = os.path.join(suite_dir, name) + '.disabled'
+                disabled_file = f'{os.path.join(suite_dir, name)}.disabled'
 
                 if os.path.exists(disabled_file) and not args.disabled:
                     message = open(disabled_file, 'r').read()
-                    status += MSG_SKIPPED + " - " + message + "\n"
+                    status += f"{MSG_SKIPPED} - {message}" + "\n"
                 else:
-                    file_suffix = (
-                        '.' + str(os.getpid())
-                    ) if is_concurrent and args.test_runs > 1 else ''
-                    result_file = os.path.join(suite_dir, name) + '.result'
+                    file_suffix = f'.{os.getpid()}' if is_concurrent and args.test_runs > 1 else ''
+                    result_file = f'{os.path.join(suite_dir, name)}.result'
                     cluster_result_file = os.path.join(suite_dir,
                                                        name) + '_cluster.result'
                     stdout_file = os.path.join(suite_tmp_dir,
@@ -495,7 +488,7 @@ def main(args):
         if args.skip_dir and any(s in suite for s in args.skip_dir):
             continue
 
-        if args.run_dir and not any(s in suite for s in args.run_dir):
+        if args.run_dir and all(s not in suite for s in args.run_dir):
             continue
 
         # suite_dir should be changed when there is an subdirectory,
@@ -510,7 +503,7 @@ def main(args):
         if not os.path.exists(suite_tmp_dir):
             os.makedirs(suite_tmp_dir)
 
-        suite_pat = suite_re_obj.group(1)
+        suite_pat = suite_re_obj[1]
         if os.path.isdir(suite_dir):
             # Reverse sort order: we want run newest test first.
             # And not reverse subtests
@@ -530,19 +523,19 @@ def main(args):
 
             if args.test:
                 all_tests = [
-                    t for t in all_tests
-                    if any([re.search(r,
-                                      t.split("/")[-1]) for r in args.test])
+                    t
+                    for t in all_tests
+                    if any(re.search(r, t.split("/")[-1]) for r in args.test)
                 ]
             else:
-                all_tests = [t for t in all_tests]
+                all_tests = list(all_tests)
 
             bad_tests = filter(
                 lambda case: re.search('^[0-9]+_[0-9]+_(.*)$',
                                        case.split("/")[-1]) is None, all_tests)
-            bad_tests = [t for t in bad_tests]
+            bad_tests = list(bad_tests)
 
-            if len(bad_tests) > 0:
+            if bad_tests:
                 print("Illegal test case names: {}, \
                     must match `^ [0-9]+_[0-9]+_(.*)$`".format(bad_tests))
                 sys.exit(1)

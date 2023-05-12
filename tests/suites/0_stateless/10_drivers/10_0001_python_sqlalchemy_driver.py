@@ -5,13 +5,8 @@ from sqlalchemy import text
 import os
 
 tcp_port = os.getenv("QUERY_MYSQL_HANDLER_PORT")
-if tcp_port is None:
-    port = "3307"
-else:
-    port = tcp_port
-
-
-uri = "mysql+pymysql://root:root@localhost:" + port + "/"
+port = "3307" if tcp_port is None else tcp_port
+uri = f"mysql+pymysql://root:root@localhost:{port}/"
 engine = sqlalchemy.create_engine(uri, future=True)
 with engine.connect() as conn:
     conn.execute(text("create database if not exists book_db"))

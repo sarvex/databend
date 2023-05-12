@@ -39,7 +39,7 @@ class mysql_client:
             cursor.execute(sql)
             return None
         except Exception as err:
-            print("sql: {} execute with error: {} ".format(sql, str(err)))
+            print(f"sql: {sql} execute with error: {str(err)} ")
             return err
 
 
@@ -136,12 +136,12 @@ def grammar_fuzzer(
         if len(nonterminals(new_term)) < max_nonterminals:
             term = new_term
             if log:
-                print("%-40s" % (symbol_to_expand + " -> " + expansion), term)
+                print("%-40s" % f"{symbol_to_expand} -> {expansion}", term)
             expansion_trials = 0
         else:
             expansion_trials += 1
             if expansion_trials >= max_expansion_trials:
-                raise ExpansionError("Cannot expand " + repr(term))
+                raise ExpansionError(f"Cannot expand {repr(term)}")
     return term
 
 
@@ -181,19 +181,15 @@ class FuzzRunner:
 
     def run(self):
         for generator in self._generators:
-            for i in range(generator.execute_times):
+            for _ in range(generator.execute_times):
                 query = generator.next()
                 if not query_validate(self._executor.execute(query)):
-                    raise ExpansionError("query {} failed".format(query))
+                    raise ExpansionError(f"query {query} failed")
         self._executor.close()
 
 
 def query_validate(result):
-    if result is None:  # sql success
-        return True
-    if "Code" in str(result):  # sql error
-        return True
-    return False  # other error as a failed test
+    return True if result is None else "Code" in str(result)
 
 
 generator_list = [
